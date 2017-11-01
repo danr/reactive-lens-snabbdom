@@ -1,11 +1,9 @@
-import * as Plumbing from './Plumbing'
-import * as Snabbdom from "./Snabbdom"
-import * as S from "./Snabbdom"
+import * as ps from "projective-snabbdom"
+import * as S from "SnabbDSL"
 
-import { tag, Build } from "./Snabbdom"
-import { VNode } from "snabbdom/vnode"
+import { tag, Build, VNode } from "SnabbDSL"
 
-import { Ref, record, views, at } from "./Dannelib"
+import { Ref, record, views, at } from "projective"
 
 export type Visibility = 'all' | 'complete' | 'incomplete'
 
@@ -36,7 +34,7 @@ function visibility_from_hash(hash: string, s: State): State {
   }
 }
 
-export const init: State = Plumbing.stored_or({
+export const init: State = stored_or({
   next_id: 0,
   todos: [],
   new_input: '',
@@ -157,8 +155,22 @@ const view = (r: Ref<State>) => {
 }
 
 export const attach =
-  Plumbing.attach(
-    Plumbing.route(
+  ps.attach(
+    ps.route(
       visibility_from_hash,
       s => s.visibility,
       view))
+
+function stored_or<S>(s: S) {
+  const stored = window.localStorage.getItem('state')
+  if (stored) {
+    try {
+      return JSON.parse(stored)
+    } catch (e) {
+      return s
+    }
+  } else {
+    return s
+  }
+}
+

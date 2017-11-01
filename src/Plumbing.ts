@@ -1,14 +1,12 @@
-import * as Snabbdom from "./Snabbdom"
+import * as S from "snabbdom"
 
 import { VNode } from "snabbdom/vnode"
-
-import { Ref } from "./Dannelib"
+import { Ref } from "projective"
 
 export function attach<S>(view: (ref: Ref<S>) => VNode):
     (root_element: HTMLElement, s0: S) => () => S {
   return (root_element: HTMLElement, s0: S) => {
     const r = Ref.root(s0)
-    ; (window as any).r = r
     const patch = setup(root_element)
     function redraw() {
       patch(view(r))
@@ -30,23 +28,10 @@ function setup(root_element: HTMLElement): (vnode: VNode) => void {
 
   const container = document.createElement('div')
   root_element.appendChild(container)
-  let vnode = Snabbdom.patch(container, Snabbdom.h('div'))
+  let vnode = S.patch(container, S.h('div'))
 
   return new_vnode => {
-    vnode = Snabbdom.patch(vnode, new_vnode)
-  }
-}
-
-export function stored_or<S>(s: S) {
-  const stored = window.localStorage.getItem('state')
-  if (stored) {
-    try {
-      return JSON.parse(stored)
-    } catch (e) {
-      return s
-    }
-  } else {
-    return s
+    vnode = S.patch(vnode, new_vnode)
   }
 }
 
