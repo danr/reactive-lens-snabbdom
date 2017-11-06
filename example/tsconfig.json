@@ -7,10 +7,10 @@
         "sourceMap": true,
         "strictNullChecks": true,
         "declaration": true,
-        "removeComments": false,
-        "noUnusedLocals": true
+        "removeComments": false
     },
     "files": [
-        "./src/reactive-lens-snabbdom.ts"
+        "src/App.ts",
+        "src/index.ts"
     ]
 }

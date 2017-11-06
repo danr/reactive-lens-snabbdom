@@ -1,15 +1,12 @@
-import * as ps from "projective-snabbdom"
-import * as S from "SnabbDSL"
-
-import { tag, Build, VNode } from "SnabbDSL"
-
-import { Ref, record, views, at } from "projective"
+import { tag, Content as S } from "snabbis"
+import { Store, Lens } from "reactive-lens"
+import { VNode } from "snabbdom/vnode"
 
 export type Visibility = 'all' | 'complete' | 'incomplete'
 
 const visibilites = ['all', 'complete', 'incomplete'] as Visibility[]
 
-interface Todo {
+export interface Todo {
   id: number,
   text: string,
   completed: boolean
@@ -64,7 +61,7 @@ const remove_todo =
   (todos: Todo[]) =>
   todos.filter(t => t.id != id)
 
-const CatchSubmit = (cb: () => void, ...bs: Build[]) =>
+const CatchSubmit = (cb: () => void, ...bs: S[]) =>
   tag('form',
     S.on('submit')((e: Event) => {
         cb()
@@ -72,18 +69,18 @@ const CatchSubmit = (cb: () => void, ...bs: Build[]) =>
       }),
     ...bs)
 
-const InputField = (r: Ref<string>, ...bs: Build[]) =>
+const InputField = (store: Store<string>, ...bs: S[]) =>
   tag('input',
     S.attrs({
       type: 'text',
-      value: r.get()
+      value: store.get()
     }),
-    S.on('input')((e: Event) => r.set((e.target as HTMLInputElement).value)),
+    S.on('input')((e: Event) => store.set((e.target as HTMLInputElement).value)),
     ...bs)
 
 // actually not a checkbox
-export const Checkbox =
-  (value: boolean, update: (new_value: boolean) => void, ...bs: Build[]) =>
+const Checkbox =
+  (value: boolean, update: (new_value: boolean) => void, ...bs: S[]) =>
   tag('span',
     S.classes({checked: value}),
     S.on('click')((_: MouseEvent) => update(!value)),
@@ -91,17 +88,17 @@ export const Checkbox =
     S.styles({cursor: 'pointer'}),
     ...bs)
 
-const view = (r: Ref<State>) => (const u = {
-  const {todos, visibility} = r.get()
-  const todos_ref = r.proj('todos')
+export const view = (store: Store<State>): VNode => {
+  const {todos, visibility} = store.get()
+  const todos_store = store.at('todos')
 
   const Header =
     tag('header .header',
       tag('h1', 'todos'),
       CatchSubmit(
-        () => r.modify(new_todo),
+        () => store.modify(new_todo),
         InputField(
-          r.proj('new_input'),
+          store.at('new_input'),
           S.attrs({
             placeholder: 'What needs to be done?',
             autofocus: true
@@ -109,31 +106,31 @@ const view = (r: Ref<State>) => (const u = {
           S.classed('new-todo'))))
 
    const TodoView =
-     (todo_ref: Ref<Todo>, {completed, id, text}: Todo) =>
+     (todo_store: Store<Todo>, {completed, id, text}: Todo) =>
        tag('li .todo',
          S.classes({ completed }),
          tag('div .view',
            Checkbox(
              completed,
-             todo_ref.proj('completed').set,
+             (v) => todo_store.at('completed').set(v),
              S.classed('toggle'),
              S.style('height', '40px')),
            tag('label', text),
            tag('button .destroy',
-             S.on('click')(_ => todos_ref.modify(remove_todo(id))))),
-         InputField(todo_ref.proj('text'), S.classed('edit')))
+             S.on('click')(_ => todos_store.modify(remove_todo(id))))),
+         InputField(todo_store.at('text'), S.classed('edit')))
 
    const Main =
      todos.length == 0 ? null :
      tag('section .main',
        Checkbox(
          todos.some(todo => !todo.completed),
-         (b: boolean) => todos_ref.modify(
+         (b: boolean) => todos_store.modify(
            todos => todos.map(todo => ({...todo, completed: !b}))),
          S.classed('toggle-all'),
          S.id('toggle-all')),
        tag('ul .todo-list',
-         views(todos_ref)
+         Store.each(todos_store)
          .map(ref => ({ref, todo: ref.get()}))
          .filter(({todo}) => visibility != (todo.completed ? 'incomplete' : 'complete'))
          .map(({ref, todo}) => TodoView(ref, todo))))
@@ -154,13 +151,6 @@ const view = (r: Ref<State>) => (const u = {
   return tag('section .todoapp #todoapp', Header, Main, Footer)
 }
 
-export const attach =
-  ps.attach(
-    ps.route(
-      visibility_from_hash,
-      s => s.visibility,
-      view))
-
 function stored_or<S>(s: S) {
   const stored = window.localStorage.getItem('state')
   if (stored) {
@@ -177,13 +167,13 @@ function stored_or<S>(s: S) {
 export function route<S, R>(
     populate_hash: (h: string, s: S) => S,
     get_hash: (s: S) => string,
-    view: (r: Ref<S>) => R): (r: Ref<S>) => R {
-  return r => {
+    view: (store: Store<S>) => R): (store: Store<S>) => R {
+  return store => {
     window.onhashchange = () => {
-      r.modify(s => populate_hash(window.location.hash, s))
+      store.modify(s => populate_hash(window.location.hash, s))
     }
-    window.location.hash = get_hash(r.get())
-    return view(r)
+    window.location.hash = get_hash(store.get())
+    return view(store)
   }
 }
 

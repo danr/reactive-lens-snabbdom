@@ -10,9 +10,7 @@
     "reactive-lens": "~0.1.0",
     "reactive-lens-snabbdom": "~0.1.0",
     "snabbis": "~0.1.0",
-    "snabbdom": "^0.7.0",
-    "todomvc-app-css": "^1.0.0",
-    "todomvc-common": "^1.0.1"
+    "snabbdom": "^0.7.0"
   },
   "devDependencies": {
     "@types/tape": "^4.2.30",
