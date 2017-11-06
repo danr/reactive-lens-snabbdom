@@ -6,8 +6,11 @@
 ## API overview
 * Patcher
 * Patch
+* interface ManagedApp
+  * view
+  * services
 * attach
-* reattach
+* setup
 ## Documentation
 * **Patcher**: `undefined`
 
@@ -15,9 +18,18 @@
 * **Patch**: `undefined`
 
   
-* **attach**: `<S>(patch: Patch, root: HTMLElement, store: Store<S>, view: (store: Store<S>) => VNode) => Patcher`
+### interface ManagedApp
+
+
+* **view**: `() => VNode`
 
   
-* **reattach**: `<S>(patcher: Patcher, store: Store<S>, view: (store: Store<S>) => VNode) => void`
+* **services**: `Array<() => void>`
+
+  
+* **attach**: `<S>(patcher: Patcher, store: Store<S>, manage: (store: Store<S>) => ManagedApp) => () => void`
+
+  
+* **setup**: `(patch: Patch, root: HTMLElement) => Patcher`
 
   

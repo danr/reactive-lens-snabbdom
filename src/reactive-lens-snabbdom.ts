@@ -6,15 +6,21 @@ import { Store } from "reactive-lens"
 export type Patcher = (vnode: VNode) => void
 export type Patch = (oldVnode: VNode | Element, vnode: VNode) => VNode
 
-export function attach<S>(patcher: Patcher, store: Store<S>, view: (store: Store<S>) => VNode): () => void {
+export interface ManagedApp {
+  view: () => VNode,
+  services?: (() => void)[]
+}
+
+export function attach<S>(patcher: Patcher, store: Store<S>, manage: (store: Store<S>) => ManagedApp): () => void {
+  const managed = manage(store)
   function redraw() {
     store.transaction(() => {
-      patcher(view(store))
+      patcher(managed.view())
     })
   }
   const off = store.on(redraw)
   redraw()
-  return off
+  return () => (off(), (managed.services || []).forEach((off => off())))
 }
 
 
