@@ -1,5 +1,5 @@
 import { tag, Content as S } from "snabbis"
-import { Store, Lens } from "reactive-lens"
+import { Store, Lens, Omit } from "reactive-lens"
 import { VNode } from "snabbdom/vnode"
 
 export type Visibility = 'all' | 'complete' | 'incomplete'
@@ -12,31 +12,45 @@ export interface Todo {
   completed: boolean
 }
 
-export type State = {
+export interface RawState {
+  state: State,
+  off: (() => void)[],
+}
+
+export interface State {
   next_id: number,
   todos: Todo[],
   new_input: string,
-  visibility: Visibility
+  visibility: Visibility,
+  sizes: Record<string, Pos>,
+  version: string
 }
 
-function visibility_from_hash(hash: string, s: State): State {
+export const init: RawState = ({
+  state: {
+    next_id: 0,
+    todos: [],
+    new_input: '',
+    visibility: 'all',
+    sizes: {},
+    version: '0.2',
+  },
+  off: [],
+})
+
+function visibility_from_hash(hash: string): Visibility | undefined {
   const bare = hash.slice(2)
   if (visibilites.some(x => x == bare)) {
-    return {
-      ...s,
-      visibility: bare as Visibility
-    }
+    return bare as Visibility
   } else {
-    return s
+    return undefined
   }
 }
 
-export const init: State = stored_or({
-  next_id: 0,
-  todos: [],
-  new_input: '',
-  visibility: 'all',
-})
+function visibility_to_hash(vis: Visibility) {
+  return '#/' + vis as string
+}
+
 
 function new_todo(s: State): State {
   if (s.new_input != '') {
@@ -88,7 +102,20 @@ const Checkbox =
     S.styles({cursor: 'pointer'}),
     ...bs)
 
-export const view = (store: Store<State>): VNode => {
+export const App = (store: Store<RawState>): (store: Store<RawState>) => VNode => {
+  const offs = store.at('off')
+  const register = Store.arr<() => void, 'push'>(offs, 'push')
+  offs.modify(ms => (ms.forEach(m => m()), []))
+  const state = store.at('state')
+  register(
+    connect_storage(state),
+    state.on(x => console.log(JSON.stringify(x, undefined, 2))),
+    connect_hash(visibility_to_hash, visibility_from_hash, state.at('visibility'))
+  )
+  return s => View(s.at('state'))
+}
+
+export const View = (store: Store<State>): VNode => {
   const {todos, visibility} = store.get()
   const todos_store = store.at('todos')
 
@@ -108,6 +135,14 @@ export const view = (store: Store<State>): VNode => {
    const TodoView =
      (todo_store: Store<Todo>, {completed, id, text}: Todo) =>
        tag('li .todo',
+         S.hook({
+           insert(vn: VNode) {
+             vn.elm instanceof HTMLElement && update(store.at('sizes').zoom(Lens.key(id.toString())), vn.elm)
+           },
+           postpatch(_: any, vn: VNode) {
+             vn.elm instanceof HTMLElement && update(store.at('sizes').zoom(Lens.key(id.toString())), vn.elm)
+           }
+         }),
          S.classes({ completed }),
          tag('div .view',
            Checkbox(
@@ -151,29 +186,71 @@ export const view = (store: Store<State>): VNode => {
   return tag('section .todoapp #todoapp', Header, Main, Footer)
 }
 
-function stored_or<S>(s: S) {
+function connect_storage<S>(store: Store<S>): () => void {
   const stored = window.localStorage.getItem('state')
   if (stored) {
     try {
-      return JSON.parse(stored)
-    } catch (e) {
-      return s
+      const parsed = JSON.parse(stored)
+      if ('version' in parsed && parsed.version == init.state.version) {
+        store.set(parsed)
+      }
+    } catch (_) {
+      // pass
     }
-  } else {
-    return s
   }
+  return store.on(s => window.localStorage.setItem('state', JSON.stringify(s)))
 }
 
-export function route<S, R>(
-    populate_hash: (h: string, s: S) => S,
-    get_hash: (s: S) => string,
-    view: (store: Store<S>) => R): (store: Store<S>) => R {
-  return store => {
-    window.onhashchange = () => {
-      store.modify(s => populate_hash(window.location.hash, s))
+function connect_hash<S>(to_hash: (state: S) => string, from_hash: (hash: string) => S | undefined, store: Store<S>): () => void {
+  let self = false
+  window.onhashchange = () => {
+    if (!self) {
+      const updated = from_hash(window.location.hash)
+      if (updated !== undefined) {
+        store.set(updated)
+      } else {
+        // gibberish, just revert it to what is now
+        self = true
+        window.location.hash = to_hash(store.get())
+      }
+    } else {
+      self = false
     }
-    window.location.hash = get_hash(store.get())
-    return view(store)
+  }
+  return store.on(x => {
+    const hash = to_hash(x)
+    if (hash != window.location.hash) {
+      self = true // we don't need to react on this
+      window.location.hash = hash
+    }
+  })
+}
+
+export interface Pos {
+  left: number,
+  top: number,
+  width: number,
+  height: number
+}
+
+export const hmid = (p: Pos) => p.left + p.width / 2
+
+export const vmid = (p: Pos) => p.top + p.height / 2
+
+export const bot = (p: Pos) => p.top + p.height
+
+const eq_pos = (p: Pos, q: Pos) => Object.getOwnPropertyNames(p).every((i: keyof Pos) => p[i] == q[i])
+
+const update = (pos: Store<Pos | undefined>, x: HTMLElement) => {
+  const p = {
+    left: x.offsetLeft,
+    top: x.offsetTop,
+    width: x.offsetWidth,
+    height: x.offsetHeight
+  }
+  const now = pos.get()
+  if (now === undefined || !eq_pos(p, now)) {
+    pos.set(p)
   }
 }
 

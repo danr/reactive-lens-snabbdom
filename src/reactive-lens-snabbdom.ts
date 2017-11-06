@@ -6,25 +6,19 @@ import { Store } from "reactive-lens"
 export type Patcher = (vnode: VNode) => void
 export type Patch = (oldVnode: VNode | Element, vnode: VNode) => VNode
 
-export function attach<S>(patch: Patch, root: HTMLElement, store: Store<S>, view: (store: Store<S>) => VNode): Patcher {
-  const patcher = setup(patch, root)
-  reattach(patcher, store, view)
-  return patcher
-}
-
-export function reattach<S>(patcher: Patcher, store: Store<S>, view: (store: Store<S>) => VNode): void {
-  store.disconnect()
+export function attach<S>(patcher: Patcher, store: Store<S>, view: (store: Store<S>) => VNode): () => void {
   function redraw() {
     store.transaction(() => {
       patcher(view(store))
     })
   }
-  store.on(redraw)
+  const off = store.on(redraw)
   redraw()
+  return off
 }
 
 
-function setup(patch: Patch, root: HTMLElement): Patcher {
+export function setup(patch: Patch, root: HTMLElement): Patcher {
   while (root.lastChild) {
     root.removeChild(root.lastChild)
   }
