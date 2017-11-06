@@ -1,13 +1,13 @@
 {
   "name": "reactive-lens-snabbdom",
   "version": "0.1.0",
-  "description": "Use reactive-lens with snabbdom.",
+  "description": "Use reactive-lens with snabbdom",
   "author": "Dan Rosén",
   "license": "MIT",
-  "main": "reactive-lens.js",
-  "typings": "reactive-lens.d.ts",
+  "main": "reactive-lens-snabbdom.js",
+  "typings": "reactive-lens-snabbdom.d.ts",
   "dependencies": {
-    "reactive-lens": "~0.1"
+    "reactive-lens": "~0.1",
     "snabbdom": "^0.7.0"
   },
   "devDependencies": {
@@ -23,18 +23,20 @@
     "test": "tape test/*js | tap-diff",
     "precoverage": "tsc test/*.ts",
     "coverage": "covert test/*js",
-    "compile": "tsc"
+    "compile": "tsc",
+    "readme": "> README.md typescript-doctest src/*.ts -i header.md -s '## API overview' --toc -s '## Documentation' --doc"
   },
   "keywords": [
     "virtual",
     "dom",
     "snabbdom",
+    "snabbis",
     "reactive",
     "lens",
     "store",
     "pure",
     "immutable",
-    "functional",
+    "functional"
   ],
   "directories": {
     "test": "test"

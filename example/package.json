@@ -1,12 +1,15 @@
 {
-  "name": "dannelib-demo",
+  "name": "reactive-lens-todomvc-demo",
   "license": "MIT",
   "version": "0.1.0",
   "author": "Dan Rosén",
-  "description": "TodoMVC using dannelib",
+  "description": "TodoMVC using reactive-lens and snabbdom",
   "main": "./dist/bundle.js",
-  "repository": "https://github.com/danr/dannelib-todomvc.git/",
+  "repository": "https://github.com/danr/reactive-lens-snabbdom/",
   "dependencies": {
+    "reactive-lens": "~0.1.0",
+    "reactive-lens-snabbdom": "~0.1.0",
+    "snabbis": "~0.1.0",
     "snabbdom": "^0.7.0",
     "todomvc-app-css": "^1.0.0",
     "todomvc-common": "^1.0.1"
@@ -27,8 +30,8 @@
     "webpack-dev-server": "2.3.0"
   },
   "scripts": {
-    "start": "./node_modules/.bin/webpack-dev-server --hot",
+    "start": "webpack-dev-server --hot",
     "build": "NODE_ENV=production webpack --display-optimization-bailout",
-    "test": "./node_modules/.bin/ts-node node_modules/.bin/tape test/*.ts | ./node_modules/.bin/tap-diff"
+    "test": "ts-node tape test/*.ts | tap-diff"
   }
 }

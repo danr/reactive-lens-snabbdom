@@ -9,6 +9,6 @@
         "target": "es5"
     },
     "files": [
-        "./src/**/*"
+        "./src/reactive-lens-snabbdom.ts"
     ]
 }

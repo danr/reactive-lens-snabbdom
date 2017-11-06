@@ -91,7 +91,7 @@ export const Checkbox =
     S.styles({cursor: 'pointer'}),
     ...bs)
 
-const view = (r: Ref<State>) => {
+const view = (r: Ref<State>) => (const u = {
   const {todos, visibility} = r.get()
   const todos_ref = r.proj('todos')
 
@@ -173,4 +173,18 @@ function stored_or<S>(s: S) {
     return s
   }
 }
+
+export function route<S, R>(
+    populate_hash: (h: string, s: S) => S,
+    get_hash: (s: S) => string,
+    view: (r: Ref<S>) => R): (r: Ref<S>) => R {
+  return r => {
+    window.onhashchange = () => {
+      r.modify(s => populate_hash(window.location.hash, s))
+    }
+    window.location.hash = get_hash(r.get())
+    return view(r)
+  }
+}
+
 

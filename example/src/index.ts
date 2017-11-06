@@ -1,10 +1,10 @@
 import * as App from "./App"
+import { attach } from "reactive-lens-snabbdom"
 
+const store = Store.init(App.init)
 const root = document.getElementById('root') as HTMLElement
 
-let App_attach = App.attach
-
-let get = App_attach(root, App.init)
+attach(root, store, App.view)
 
 declare const module: any;
 declare const require: any;
@@ -14,8 +14,8 @@ if (Debug) {
   if (module.hot) {
     module.hot.accept('./App.ts', (_: any) => {
       try {
-        App_attach = require('./App.ts').attach
-        get = App_attach(root, get())
+        const App_view = require('./App.ts').attach
+        reattach(root, store, App_view)
       } catch (e) {
         console.error(e)
       }
