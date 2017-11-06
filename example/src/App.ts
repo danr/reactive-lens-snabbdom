@@ -103,16 +103,14 @@ const Checkbox =
     ...bs)
 
 export const App = (store: Store<RawState>): (store: Store<RawState>) => VNode => {
-  const offs = store.at('off')
-  const register = Store.arr<() => void, 'push'>(offs, 'push')
-  offs.modify(ms => (ms.forEach(m => m()), []))
   const state = store.at('state')
-  register(
+  store.at('off').get().forEach(off => off())
+  store.at('off').set([
     connect_storage(state),
     state.on(x => console.log(JSON.stringify(x, undefined, 2))),
     connect_hash(visibility_to_hash, visibility_from_hash, state.at('visibility'))
-  )
-  return s => View(s.at('state'))
+  ])
+  return () => View(state)
 }
 
 export const View = (store: Store<State>): VNode => {
