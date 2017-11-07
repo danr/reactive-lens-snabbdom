@@ -30,15 +30,19 @@ const Checkbox =
     S.styles({cursor: 'pointer'}),
     ...bs)
 
-export const App = (store: Store<State>) => ({
-  view: () => View(store),
-  services: [
-    ((window as any).store = store, () => void 0),
-    connect_storage(store),
-    connect_hash(Model.to_hash, Model.from_hash, store.at('visibility')),
-    store.on(x => console.log(JSON.stringify(x, undefined, 2))),
-  ]
-})
+export const App = (store: Store<State>) => {
+  const global = window as any
+  global.store = store
+  global.reset = () => store.set(Model.init)
+  return {
+    view: () => View(store),
+    services: [
+      connect_storage(store),
+      connect_hash(Model.to_hash, Model.from_hash, store.at('visibility')),
+      store.on(x => console.log(JSON.stringify(x, undefined, 2))),
+    ]
+  }
+}
 
 export const View = (store: Store<State>): VNode => {
   const {todos, visibility} = store.get()
@@ -163,10 +167,10 @@ function connect_hash<S>(to_hash: (state: S) => string, from_hash: (hash: string
 
 S.hook({
   insert(vn: VNode) {
-    vn.elm instanceof HTMLElement && update(store.at('sizes').zoom(Lens.key(id.toString())), vn.elm)
+    vn.elm instanceof HTMLElement && update(store.at('sizes').via(Lens.key(id.toString())), vn.elm)
   },
   postpatch(_: any, vn: VNode) {
-    vn.elm instanceof HTMLElement && update(store.at('sizes').zoom(Lens.key(id.toString())), vn.elm)
+    vn.elm instanceof HTMLElement && update(store.at('sizes').via(Lens.key(id.toString())), vn.elm)
   }
 }),
 
