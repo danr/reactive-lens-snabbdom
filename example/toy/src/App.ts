@@ -1,8 +1,6 @@
 import { tag, Content as S } from "snabbis"
 import { Store, Lens, Undo } from "reactive-lens"
 import { VNode } from "snabbdom/vnode"
-// import * as Model from "./Model"
-// import { State, Todo, Visibility } from "./Model"
 
 export interface State {
   slide: number,
@@ -44,7 +42,6 @@ export const init: State = {
   }
 }
 
-
 const slides = 6
 
 const json = (x: any) => JSON.stringify(x, undefined, 2)
@@ -56,8 +53,8 @@ function Views(slide: number, store: Store<Slides>): VNode {
   switch (slide) {
     case 0: return tag('span', store.at('title').get())
     case 1: return tag('div',
-      tag('div', 'a: ', InputField(input.at('a'))),
-      tag('div', 'b: ', InputField(input.at('b')))
+      tag('div', 'textrutan: ', InputField(input.at('a'))),
+      tag('div', 'annat: ', InputField(input.at('b')))
     )
     case 2: return tag('div', tag('div', Views(slide - 1, store)), Textarea(input))
     case 3: return Tabulate(history)
@@ -155,7 +152,8 @@ const CatchSubmit = (cb: () => void, ...bs: S[]) =>
 const InputField = (store: Store<string>, ...bs: S[]) =>
   tag('input',
     S.props({ value: store.get() }),
-    S.on('input')((e: Event) => store.set((e.target as HTMLInputElement).value)),
+    S.on('input')((e: Event) =>
+      store.set((e.target as HTMLInputElement).value)),
     ...bs)
 
 const CheckBox = (store: Store<boolean>, ...bs: S[]) =>
@@ -195,211 +193,16 @@ export const App = (root: Store<State>) => {
   global.table_store = store.at('table').via(Undo.now())
   global.history_store = store.at('table')
   return {
-    view: () => tag('div .Slide' + root.at('slide').get(), Views(root.at('slide').get(), store)),
+    view: (): VNode => tag('div .Slide' + root.at('slide').get(), Views(root.at('slide').get(), store)),
     services: [
-      connect_storage(store),
-      connect_hash(to_hash, from_hash, root.at('slide')),
+      store.storage_connect(),
+      root.at('slide').location_connect(to_hash, from_hash),
       // store.on(x => console.log(JSON.stringify(x, undefined, 2))),
     ]
   }
 }
 
-
-
-// export const View = (store: Store<State>): VNode => {
-
-/*
-
-// actually not a checkbox
-const Checkbox =
-  (value: boolean, update: (new_value: boolean) => void, ...bs: S[]) =>
-  tag('span',
-    S.classes({checked: value}),
-    S.on('click')((_: MouseEvent) => update(!value)),
-    S.on('input')((_: Event) => update(!value)),
-    S.styles({cursor: 'pointer'}),
-    ...bs)
-
-export const App = (store: Store<State>) => {
-  const global = window as any
-  global.store = store
-  global.reset = () => store.set(Model.init)
-  return {
-    view: () => View(store),
-    services: [
-      connect_storage(store),
-      connect_hash(Model.to_hash, Model.from_hash, store.at('visibility')),
-      store.on(x => console.log(JSON.stringify(x, undefined, 2))),
-    ]
-  }
-}
-
-export const View = (store: Store<State>): VNode => {
-  const {todos, visibility} = store.get()
-  const todos_store = store.at('todos')
-
-  const Header =
-    tag('header .header',
-      tag('h1', 'todos'),
-      CatchSubmit(
-        () => store.modify(Model.new_todo),
-        InputField(
-          store.at('new_input'),
-          S.attrs({
-            placeholder: 'What needs to be done?',
-            autofocus: true
-          }),
-          S.classed('new-todo'))))
-
-  const TodoView =
-    (todo_store: Store<Todo>, {completed, text, editing, id}: Todo, rm: () => void) =>
-      tag('li .todo',
-        S.key(id),
-        S.classes({ completed, editing }),
-        tag('div',
-          S.classes({ view: !editing }),
-          Checkbox(
-            completed,
-            (v) => todo_store.at('completed').set(v),
-            S.classed('toggle'),
-            S.style('height', '40px')),
-          editing || tag('label',
-            text,
-            S.styles({cursor: 'pointer'}),
-            S.on('dblclick')((e: MouseEvent) => {
-              todo_store.at('editing').set(true)
-            }),
-          ),
-          editing && CatchSubmit(
-            () => todo_store.at('editing').set(false),
-            InputField(
-              todo_store.at('text'),
-              S.classed('edit'),
-              S.on('blur')(() => todo_store.at('editing').set(false))
-            ),
-          ),
-          tag('button .destroy', S.on('click')(rm))),
-        )
-
-  const Main =
-    todos.length > 0 &&
-    tag('section .main',
-      Checkbox(
-        Model.all_completed(todos),
-        (b: boolean) => todos_store.modify(Model.set_all(!b)),
-        S.classed('toggle-all'),
-        S.id('toggle-all')),
-      tag('ul .todo-list',
-        Store.each(todos_store).map(
-          (ref, i) => {
-            const todo = ref.get()
-            const rm = () => todos_store.modify(Model.remove_todo(i))
-            if (Model.todo_visible(todo, visibility)) {
-              return TodoView(ref, todo, rm)
-            }
-          })))
-
-  const Footer =
-    tag('footer .footer',
-      tag('span .todo-count', todos.length.toString()),
-      tag('ul .filters',
-        Model.visibilites.map((opt: Visibility) =>
-          tag('li',
-            tag('a',
-              S.classes({selected: visibility == opt}),
-              S.attrs({href: '#/' + opt}),
-              opt)))))
-
-  // todo: clear completed
-
-  return tag('section .todoapp #todoapp', Header, Main, Footer)
-}
-
-*/
-
-function connect_storage<S>(store: Store<S>): () => void {
-  const stored = window.localStorage.getItem('state')
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored)
-      store.set(parsed)
-    } catch (_) {
-      // pass
-    }
-  }
-  return store.on(s => window.localStorage.setItem('state', JSON.stringify(s)))
-}
-
-function connect_hash<S>(to_hash: (state: S) => string, from_hash: (hash: string) => S | undefined, store: Store<S>): () => void {
-  let self = false
-  function update() {
-    if (!self) {
-      const updated = from_hash(window.location.hash)
-      if (updated !== undefined) {
-        store.set(updated)
-      } else {
-        // gibberish, just revert it to what is now
-        self = true
-        window.location.hash = to_hash(store.get())
-      }
-    } else {
-      self = false
-    }
-  }
-  window.onhashchange = () => update()
-  update()
-  return store.on(x => {
-    const hash = to_hash(x)
-    if (hash != window.location.hash) {
-      self = true // we don't need to react on this
-      window.location.hash = hash
-    }
-  })
-}
-
-/*
-
-S.hook({
-  insert(vn: VNode) {
-    vn.elm instanceof HTMLElement && update(store.at('sizes').via(Lens.key(id.toString())), vn.elm)
-  },
-  postpatch(_: any, vn: VNode) {
-    vn.elm instanceof HTMLElement && update(store.at('sizes').via(Lens.key(id.toString())), vn.elm)
-  }
-}),
-
-export interface Pos {
-  left: number,
-  top: number,
-  width: number,
-  height: number
-}
-
-export const hmid = (p: Pos) => p.left + p.width / 2
-
-export const vmid = (p: Pos) => p.top + p.height / 2
-
-export const bot = (p: Pos) => p.top + p.height
-
-const eq_pos = (p: Pos, q: Pos) => Object.getOwnPropertyNames(p).every((i: keyof Pos) => p[i] == q[i])
-
-const update = (pos: Store<Pos | undefined>, x: HTMLElement) => {
-  const p = {
-    left: x.offsetLeft,
-    top: x.offsetTop,
-    width: x.offsetWidth,
-    height: x.offsetHeight
-  }
-  const now = pos.get()
-  if (now === undefined || !eq_pos(p, now)) {
-    pos.set(p)
-  }
-}
-
-
-*/
-
-export function from_hash(hash: string): number | undefined {
+function from_hash(hash: string): number | undefined {
   const n = parseInt(hash.slice(1))
   console.log(hash, n, slides)
   if (n >= 0 && n < slides) {
@@ -409,7 +212,7 @@ export function from_hash(hash: string): number | undefined {
   }
 }
 
-export function to_hash(slide: number): string {
+function to_hash(slide: number): string {
   return '#' + slide.toString()
 }
 

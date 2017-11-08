@@ -37,8 +37,8 @@ export const App = (store: Store<State>) => {
   return {
     view: () => View(store),
     services: [
-      connect_storage(store),
-      connect_hash(Model.to_hash, Model.from_hash, store.at('visibility')),
+      store.storage_connect(),
+      store.at('visibility').location_connect(Model.to_hash, Model.from_hash),
       store.on(x => console.log(JSON.stringify(x, undefined, 2))),
     ]
   }
@@ -123,44 +123,6 @@ export const View = (store: Store<State>): VNode => {
   // todo: clear completed
 
   return tag('section .todoapp #todoapp', Header, Main, Footer)
-}
-
-function connect_storage<S>(store: Store<S>): () => void {
-  const stored = window.localStorage.getItem('state')
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored)
-      store.set(parsed)
-    } catch (_) {
-      // pass
-    }
-  }
-  return store.on(s => window.localStorage.setItem('state', JSON.stringify(s)))
-}
-
-function connect_hash<S>(to_hash: (state: S) => string, from_hash: (hash: string) => S | undefined, store: Store<S>): () => void {
-  let self = false
-  window.onhashchange = () => {
-    if (!self) {
-      const updated = from_hash(window.location.hash)
-      if (updated !== undefined) {
-        store.set(updated)
-      } else {
-        // gibberish, just revert it to what is now
-        self = true
-        window.location.hash = to_hash(store.get())
-      }
-    } else {
-      self = false
-    }
-  }
-  return store.on(x => {
-    const hash = to_hash(x)
-    if (hash != window.location.hash) {
-      self = true // we don't need to react on this
-      window.location.hash = hash
-    }
-  })
 }
 
 /*
