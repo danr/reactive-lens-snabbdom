@@ -7,9 +7,9 @@
   "main": "./dist/bundle.js",
   "repository": "https://github.com/danr/reactive-lens-snabbdom/",
   "dependencies": {
-    "reactive-lens": "~0.1.0",
-    "reactive-lens-snabbdom": "~0.1.0",
-    "snabbis": "~0.1.0",
+    "reactive-lens": "^0.1.1",
+    "reactive-lens-snabbdom": "^0.1.2",
+    "snabbis": "^0.1.1",
     "snabbdom": "^0.7.0"
   },
   "devDependencies": {
