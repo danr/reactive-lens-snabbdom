@@ -1,6 +1,6 @@
 {
   "name": "reactive-lens-snabbdom",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Use reactive-lens with snabbdom",
   "author": "Dan Rosén",
   "license": "MIT",
