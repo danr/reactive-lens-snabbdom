@@ -7,7 +7,7 @@
   "main": "reactive-lens-snabbdom.js",
   "typings": "reactive-lens-snabbdom.d.ts",
   "dependencies": {
-    "reactive-lens": "^0.1",
+    "reactive-lens": "^0.1.2",
     "snabbdom": "^0.7.0"
   },
   "devDependencies": {

@@ -48,7 +48,7 @@ const json = (x: any) => JSON.stringify(x, undefined, 2)
 
 function Views(slide: number, store: Store<Slides>): VNode {
   const input = store.at('input')
-  const table = store.at('table').via(Undo.now())
+  const table = store.at('table').at('now')
   const history = store.at('table')
   switch (slide) {
     case 0: return tag('span', store.at('title').get())
@@ -72,11 +72,10 @@ function Views(slide: number, store: Store<Slides>): VNode {
 }
 
 function Tabulate(history: Store<Undo<Table>>) {
-  const store = history.via(Undo.now())
+  const store = history.at('now')
   const {headers, table} = store.get()
   const advance = () => {
-    const prev = history.get().tip.pop
-    const now = history.get().tip.top
+    const {prev, now} = history.get()
     if (prev == null || (prev.top != now)) {
       history.modify(Undo.advance)
     }
@@ -190,7 +189,7 @@ export const App = (root: Store<State>) => {
   global.store = store
   global.title_store = store.at('title')
   global.ab_store = store.at('input')
-  global.table_store = store.at('table').via(Undo.now())
+  global.table_store = store.at('table').at('now')
   global.history_store = store.at('table')
   return {
     view: (): VNode => tag('div .Slide' + root.at('slide').get(), Views(root.at('slide').get(), store)),
